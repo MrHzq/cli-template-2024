@@ -11,7 +11,7 @@
     "npmp": "npm version patch && npm publish"
   },
   "keywords": [],
-  "author": "",
+  "author": "hzq",
   "license": "ISC",
   "dependencies": {
     "chalk": "^4.1.2",
@@ -22,6 +22,7 @@
     "handlebars": "^4.7.8",
     "inquirer": "^8",
     "ora": "^5.4.1",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "simple-git": "^3.25.0"
   }
 }

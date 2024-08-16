@@ -13,7 +13,7 @@ const cmdList = require("./cmdList.json");
 
 cmdList.forEach((item) => {
   const { cmd, alias, desc } = item;
-  // 定义命令与参数，类似 xxx addMsg 等等
+  // 定义命令与参数，类似 hzq addMsg 等等
   program
     .command(cmd)
     .alias(alias)

@@ -4,7 +4,6 @@
     "alias": "ac",
     "desc": "新增一个命令"
   },
-
   {
     "cmd": "removeCmd",
     "alias": "rc",
