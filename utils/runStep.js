@@ -40,17 +40,19 @@ module.exports = async (stepList, globalFailType = "fail", config = {}) => {
     if (success) {
       everySuccess = true;
 
-      stepSpinner.succeed(tip);
+      stepSpinner.succeed("", config.prefix);
+
+      if (tip) log.succeed(tip);
 
       if (typeof config.onSuccess === "function") {
         config.onSuccess(item, funRes);
       }
     } else {
-      stepSpinner[finalType]();
+      stepSpinner[finalType]("", config.prefix);
 
       everySuccess = finalType === "warn";
 
-      if (tip) everySuccess ? log.warn(tip) : log.error(tip);
+      if (tip) log[finalType](tip);
 
       const cb = config[`on${firstUpperCase(finalType)}`];
 

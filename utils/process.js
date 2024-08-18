@@ -2,7 +2,7 @@ const { execSync } = require("child_process");
 const log = require("./log");
 
 // 执行命令
-const runCmd = (cmd) => {
+const processRun = (cmd) => {
   try {
     execSync(cmd, { stdio: "inherit" });
   } catch (error) {
@@ -11,6 +11,9 @@ const runCmd = (cmd) => {
     return tip;
   }
 };
+
+// 进入某个文件
+const cdPath = (path) => `cd ${path}`;
 
 // 获取 git 用户信息
 const getGitUser = () => {
@@ -33,7 +36,16 @@ const getGitUser = () => {
   }
 };
 
+// 暂存
+const gitAdd = () => `git add .`;
+
+// 提交
+const gitCommit = (msg = "Initial commit") => `git commit -m "${msg}"`;
+
 module.exports = {
-  runCmd,
+  processRun,
+  cdPath,
   getGitUser,
+  gitAdd,
+  gitCommit,
 };

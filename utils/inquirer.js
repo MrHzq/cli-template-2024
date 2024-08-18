@@ -6,9 +6,11 @@ const requireRule = (value) => {
   return true;
 };
 
-const numberRule = (value) => {
-  const err = requireRule(value);
-  if (typeof err === "string") return err;
+const numberRule = (value, isReq = true) => {
+  if (isReq) {
+    const err = requireRule(value);
+    if (typeof err === "string") return err;
+  }
 
   value = value.trim();
   if (!isNaN(Number(value))) return "此字段不能为数字";
@@ -16,8 +18,18 @@ const numberRule = (value) => {
   return true;
 };
 
+const tfList = (isReverse = false) => {
+  const list = [
+    { name: "否", value: false },
+    { name: "是", value: true },
+  ];
+
+  return isReverse ? list.reverse() : list;
+};
+
 module.exports = {
   prompt,
   requireRule,
   numberRule,
+  tfList,
 };
