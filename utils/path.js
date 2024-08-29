@@ -8,7 +8,7 @@ const root = () => os.homedir();
 const currCwdPath = process.cwd();
 
 // 判断是否在当前目录
-const isInCurrCwd = (path) => currCwdPath === path;
+const pathEqCwd = (path) => currCwdPath === path;
 
 // 获取当前运行命令的目录
 const currCmdPath = __dirname;
@@ -39,7 +39,7 @@ const getDirName = (dirname = __dirname) => path.basename(dirname);
 module.exports = {
   root,
   currCwdPath,
-  isInCurrCwd,
+  pathEqCwd,
   currCmdPath,
   getFullPathBy,
   getFileName,
