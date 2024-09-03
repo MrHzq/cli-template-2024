@@ -7,6 +7,9 @@ const getHBSContent = (temp, config) => toHBSTemp(temp)(config);
 // 格式化当前时间
 const formatTime = (format = "YYYY-MM-DD HH:mm:ss") => dayjs().format(format);
 
+// 获取当前时间戳
+const getTime = () => new Date().getTime() / 1000;
+
 // 格式化传入时间
 const formatTimeBy = (time, format = "YYYY-MM-DD HH:mm:ss") =>
   dayjs(time).format(format);
@@ -15,8 +18,8 @@ const bitTransform = (bit) => {
   bit = Number(bit);
   if (isNaN(bit)) bit = 0;
 
-  const kb = (bit / 1024).toFixed(2);
-  const mb = (kb / 1024).toFixed(2);
+  const kb = (bit / 1024).toFixed(4);
+  const mb = (kb / 1024).toFixed(4);
   return { bit, kb, kbs: `${kb} KB`, mb, mbs: `${mb} MB` };
 };
 
@@ -126,10 +129,14 @@ const getFilterList = (list, filterValue, filterType = "") => {
   });
 };
 
+// 睡眠
+const sleep = (time) => new Promise((resolve) => setTimeout(resolve, time));
+
 module.exports = {
   toHBSTemp,
   getHBSContent,
   formatTime,
+  getTime,
   formatTimeBy,
   bitTransform,
   getAllYears,
@@ -144,4 +151,5 @@ module.exports = {
   removeEmpty,
   formatCmdList,
   getFilterList,
+  sleep,
 };

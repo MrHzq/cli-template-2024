@@ -2,25 +2,25 @@ const path = require("path");
 const fs = require("fs-extra");
 const log = require("./log");
 const { getFileName } = require("./path");
-const { bitTransform, formatTimeBy } = require("./common");
+const { bitTransform, formatTimeBy, getTime, doFun } = require("./common");
 
 // 检查文件是否存在
 const checkFileExist = fs.existsSync;
 
 // 基于已有文件，生成自定义的文件名称
-const newFileName = (filePath, { suffix, prefix }) => {
+const newFileName = (filePath, { suffix, prefix } = {}) => {
   if (checkFileExist(filePath)) {
     let [fileName, ext] = getFileName(filePath);
-    fileName = [prefix, fileName, suffix].filter((i) => i).join("-");
+    fileName = [prefix, fileName, suffix].filter((i) => i).join("_");
     return path.join(path.dirname(filePath), `${fileName}${ext}`);
   } else return filePath;
 };
 
 // 基于已有文件，生成唯一的文件名称
-const createUniqueFileName = (filePath, { suffix, prefix }) => {
+const createUniqueFileName = (filePath, { suffix, prefix } = {}) => {
   const random_suffix = Math.random().toString(36).substring(2, 8);
   return newFileName(filePath, {
-    suffix: suffix ? suffix + "-" + random_suffix : random_suffix,
+    suffix: [suffix, random_suffix].filter((i) => i).join("_"),
     prefix,
   });
 };
@@ -44,8 +44,13 @@ const mkdirSync = (p, re = true) => fs.mkdirSync(p, { recursive: re });
 // 重命名文件
 const renameSync = fs.renameSync;
 
+// 修改文件的时间
+const utimesSync = (p, t1, t2) => {
+  if (checkFileExist(p)) fs.utimesSync(p, t1 || getTime(), t2 || getTime());
+};
+
 // 删除文件夹 & 子文件
-const removeDir = (p) => {
+const removeSync = (p) => {
   if (checkFileExist(p)) return fs.removeSync(p);
   else return `${p} 文件不存在`;
 };
@@ -63,17 +68,22 @@ const readdirSync = (p = ".") => fs.readdirSync(p);
 const filterFileList = (fileList, filterKey, notFilterKey) => {
   return fileList.filter((file) => {
     let flg = true;
-    if (typeof filterKey === "string") {
-      flg = file.includes(filterKey);
-    } else if (Array.isArray(filterKey)) {
-      flg = filterKey.every((key) => file.includes(key));
+
+    if (flg && filterKey?.length) {
+      if (typeof filterKey === "string") {
+        flg = file.includes(filterKey);
+      } else if (Array.isArray(filterKey)) {
+        flg = filterKey.filter((key) => key).every((key) => file.includes(key));
+      }
     }
 
-    if (flg) {
+    if (flg && notFilterKey?.length) {
       if (typeof notFilterKey === "string") {
         flg = !file.includes(notFilterKey);
       } else if (Array.isArray(notFilterKey)) {
-        flg = notFilterKey.every((key) => !file.includes(key));
+        flg = notFilterKey
+          .filter((key) => key)
+          .every((key) => !file.includes(key));
       }
     }
 
@@ -82,8 +92,12 @@ const filterFileList = (fileList, filterKey, notFilterKey) => {
 };
 
 // 获取当前 cwd 运行目录下的所有文件（可通过 filterKey 过滤）
-const getFileList = (filterKey, targetPath, sortKey) => {
-  filterKey = Array.isArray(filterKey) ? filterKey : [filterKey];
+const getFileList = (filterKey, targetPath, sortKey, filterFun) => {
+  filterKey = Array.isArray(filterKey)
+    ? filterKey
+    : filterKey
+    ? [filterKey]
+    : [];
 
   let notFilterKey = [];
 
@@ -91,6 +105,8 @@ const getFileList = (filterKey, targetPath, sortKey) => {
     notFilterKey = targetPath;
     targetPath = ".";
   }
+
+  if (!targetPath) targetPath = ".";
 
   const fileList = readdirSync(targetPath);
 
@@ -104,6 +120,7 @@ const getFileList = (filterKey, targetPath, sortKey) => {
         }
       } else return a.localeCompare(b);
     })
+    .filter((file) => doFun([filterFun, true], file))
     .map((file, index) => {
       const { sizeFormat } = getFileDetail(path.resolve(file));
 
@@ -141,8 +158,7 @@ const logFileDetail = (file) => {
   log.succeed(`类型: ${stat.isFile ? "文件" : "目录"}`);
   if (stat.fullPath !== stat.filePath) log.succeed(`名称: ${stat.filePath}`);
 
-  if (stat.isFile && stat.sizeFormat.bit && stat.sizeFormat.mbs)
-    log.succeed(`大小: ${stat.sizeFormat.mbs}`);
+  if (stat.sizeFormat.mbs) log.succeed(`大小: ${stat.sizeFormat.mbs}`);
 
   log.succeed(`创建时间: ${stat.birthtimeFormat}`);
   log.succeed(`修改时间: ${stat.mtimeFormat}`);
@@ -159,7 +175,8 @@ module.exports = {
   writeFileSync,
   mkdirSync,
   renameSync,
-  removeDir,
+  utimesSync,
+  removeSync,
   moveSync,
   copyDir,
   readdirSync,

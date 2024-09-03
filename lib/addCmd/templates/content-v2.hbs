@@ -2,11 +2,15 @@
 const { prompt, notNumberRule } = require("../../utils/inquirer");
 {{/if}}
 const CmdList = require("../../bin/handleCmdList");
+const log = require("../../utils/log");
+const path = require("path");
 
 module.exports = async (_, options = {}) => {
   let cliName, config;
 
+  {{#if needInquirer}}
   let $1;
+  {{/if}}
 
   // 初始化变量
   const initVar = (answers) => {
@@ -14,10 +18,12 @@ module.exports = async (_, options = {}) => {
 
     cliName = CmdList.getCliName();
 
+    {{#if needInquirer}}
     $1 = answers.$1;
+    {{/if}}
   };
 
-  const runMain = () => {
+  const runMain = async () => {
     // 运行命令...
   };
 
@@ -57,9 +63,9 @@ module.exports = async (_, options = {}) => {
   return {
     {{#if needInquirer}}
     async prompt(...args) {
-      {{#if needConfig}}
       const config = args.pop(); // 最后一个为配置项
 
+      {{#if needConfig}}
       const reset = args[0] === "reset";
 
       if (reset) args.shift(); // 若需要重置，则将第一个参数删除掉
@@ -69,7 +75,10 @@ module.exports = async (_, options = {}) => {
 
       {{/if}}
       const [arg] = args;
-      const answers = await prompt([
+
+      let answers = {};
+      
+      answers = await prompt([
         {
           type: "input",
           name: "$1",

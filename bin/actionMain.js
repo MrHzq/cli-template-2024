@@ -1,3 +1,4 @@
+const path = require("path");
 const log = require("../utils/log");
 const Spinner = require("../utils/spinner");
 const runStep = require("../utils/runStep");
@@ -6,63 +7,66 @@ const { readConfig, writeConfig } = require("../config/handler");
 
 let mainSpinner;
 
-let config, configKey;
+let config, currCmdConfigKey;
 
 // 获取当前所需配置
 const getConfig = () => {
   const allConfig = readConfig() || {};
-  config = allConfig[configKey] || {};
+  config = allConfig[currCmdConfigKey] || {};
 };
 
 // 设置当前所得配置
 const setConfig = () => {
   const allConfig = readConfig() || {};
-  writeConfig({ ...allConfig, [configKey]: config });
+  writeConfig({ ...allConfig, [currCmdConfigKey]: config });
 };
 
 module.exports = async (_, options) => {
-  let { _name, cmd, _description, args = [] } = options;
+  let { _name, cmd, _description, args = [], parentCmd = "" } = options;
 
-  configKey = cmd || _name;
+  currCmdConfigKey = cmd || _name;
 
-  // try {
-  const { prompt, initVar, mainStepList, todoStepList } =
-    await require(`../lib/${configKey}`)(_, options);
+  const {
+    prompt,
+    initVar,
+    mainStepList = [],
+    todoStepList = [],
+  } = await require(path.join(
+    __dirname,
+    "../lib",
+    parentCmd,
+    currCmdConfigKey
+  ))(_, options);
 
   getConfig();
 
   const answers = await doFunPro([prompt, {}], ...args, config);
 
-  if (answers.config) {
-    Object.assign(config, answers.config);
-    setConfig();
-  }
+  if (answers) {
+    if (answers.config) {
+      Object.assign(config, answers.config);
+      setConfig();
+    }
 
-  Object.assign(answers, { config });
+    Object.assign(answers, { config });
 
-  initVar(answers);
+    initVar(answers, args);
+  } else return;
 
   mainSpinner = new Spinner(_description);
 
-  if (mainStepList.length === 1 && !todoStepList?.length) {
-    await mainStepList[0].fun();
-    return mainSpinner.succeed();
-  }
+  if (mainStepList.length > 1) mainSpinner.start();
 
-  mainSpinner.start();
-
-  const runSuccess = await runStep(mainStepList);
+  const runSuccess = await runStep(mainStepList, "fail", { mainSpinner });
 
   if (runSuccess) {
     mainSpinner.succeed();
 
-    log.warn("next todo", true);
-    runStep(todoStepList, "warn", { prefix: "todo" });
+    if (todoStepList?.length) {
+      log.warn("next todo", true);
+      runStep(todoStepList, "warn", { prefix: "todo" });
+    }
   } else {
     mainSpinner.fail();
   }
-  // } catch (error) {
-  //   log.warn(`未找到对应命令 ${configKey}`);
-  //   throw new Error({ cause: error });
-  // }
 };
