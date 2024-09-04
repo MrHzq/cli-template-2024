@@ -47,7 +47,8 @@ module.exports = async (_, options) => {
 
   if (answers) {
     if (answers.config) {
-      Object.assign(config, answers.config);
+      if (answers.configType !== "reset") Object.assign(config, answers.config);
+      else config = answers.config;
       setConfig();
     }
 
