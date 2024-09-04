@@ -30,6 +30,9 @@ module.exports = async (_, options) => {
     prompt,
     initVar,
     mainStepList = [],
+    onSuccessStep,
+    onBeforeTodo,
+    onStartTodo,
     todoStepList = [],
   } = await require(path.join(
     __dirname,
@@ -53,20 +56,31 @@ module.exports = async (_, options) => {
     initVar(answers, args);
   } else return;
 
+  // console.time("本次执行耗时");
+
   mainSpinner = new Spinner(_description);
 
   if (mainStepList.length > 1) mainSpinner.start();
 
-  const runSuccess = await runStep(mainStepList, "fail", { mainSpinner });
+  const runSuccess = await runStep(mainStepList, "fail", {
+    mainSpinner,
+    onSuccessStep,
+  });
 
   if (runSuccess) {
     mainSpinner.succeed();
 
-    if (todoStepList?.length) {
+    const continueTodo = await doFunPro([onBeforeTodo, true]);
+
+    if (continueTodo && todoStepList?.length) {
+      await doFunPro([onStartTodo, true]);
       log.warn("next todo", true);
-      runStep(todoStepList, "warn", { prefix: "todo" });
+      await runStep(todoStepList, "warn", { prefix: "todo" });
     }
   } else {
     mainSpinner.fail();
   }
+
+  log.newLine();
+  // console.timeEnd("本次执行耗时");
 };
