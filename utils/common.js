@@ -55,6 +55,23 @@ const isExistByRegTest = (content, target) => {
   return regex.test(content); // 使用 test 方法进行正则匹配
 };
 
+// 检查某个依赖是否被使用了
+const checkDependencyUsed = (dependency, fileContent) => {
+  const regexStaticImport = new RegExp(
+    `require\\(['"\`]${dependency}['"\`]|from ['"\`]${dependency}['"\`]`,
+    "i"
+  );
+  const regexDynamicImport = new RegExp(
+    `import\\(['"\`]${dependency}['"\`]\\)`,
+    "i"
+  );
+
+  return [
+    regexStaticImport.test(fileContent),
+    regexDynamicImport.test(fileContent),
+  ].some(Boolean);
+};
+
 // 将驼峰命名转换为横线连接
 const camelToHyphen = (str) => {
   return str.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
@@ -154,6 +171,13 @@ const getRandomStr = (len = 8) => Math.random().toString(36).substring(2, len);
 // 创建长度为 n 的空字符串
 const spaceStr = (length) => Array.from({ length }, () => " ").join("");
 
+// 使用 \n split 字符串
+const splitBy = (string, sp = "\n") => string.split(sp).filter(Boolean);
+
+const someIncludes = (l, v, k) => {
+  return l.some((i) => (k ? i[k] : i).includes(v));
+};
+
 module.exports = {
   toHBSTemp,
   getHBSContent,
@@ -164,6 +188,7 @@ module.exports = {
   bitTransform,
   getAllYears,
   isExistByRegTest,
+  checkDependencyUsed,
   camelToHyphen,
   firstUpperCase,
   firstLowerCase,
@@ -177,4 +202,6 @@ module.exports = {
   sleep,
   getRandomStr,
   spaceStr,
+  splitBy,
+  someIncludes,
 };

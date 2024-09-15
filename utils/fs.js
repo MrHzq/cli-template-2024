@@ -86,6 +86,44 @@ const copyDir = (s, t, re = true) => fs.copySync(s, t, { recursive: re });
 // 读取当前所有文件和文件夹
 const readdirSync = (p = ".") => fs.readdirSync(p);
 
+// 读取当前所有文件和文件夹以及子文件
+const reReaddirSync = (config = {}) => {
+  const fileList = [];
+
+  const { dir = ".", ignoreList = [], showIgnoreLog = false } = config;
+
+  const currIgnoreList = getDefaultIgnoreList().concat(ignoreList);
+
+  const fileEach = (_dir) => {
+    const files = readdirSync(_dir);
+
+    files.forEach((file) => {
+      const fullFilePath = path.join(_dir, file);
+
+      const isIgnore = checkPathIsIgnore(fullFilePath, currIgnoreList);
+
+      if (isIgnore && showIgnoreLog) {
+        log.error(`已忽略文件: ${fullFilePath}`);
+      }
+
+      if (!isIgnore) {
+        if (statSync(fullFilePath).isDirectory()) fileEach(fullFilePath);
+        else {
+          fileList.push({
+            filePath: file,
+            fullFilePath,
+            fileContent: readFileSync(fullFilePath),
+          });
+        }
+      }
+    });
+  };
+
+  fileEach(dir);
+
+  return fileList;
+};
+
 // 根据文件名称进行过滤
 const filterFileList = (fileList, filterKey, notFilterKey) => {
   const getFlg = (file, strKey) => {
@@ -198,6 +236,53 @@ const logFileDetail = (file) => {
   log.succeed(`完整路径: ${stat.fullPath}`);
 };
 
+// 获取 JSON 文件的内容
+const getJsonContent = (path = ".") => JSON.parse(readFileSync(path) || "{}");
+
+// 获取 .gitignore 的内容
+const getIgnoreList = (gitIgnorePath = ".gitignore") => {
+  try {
+    const ignoreList = readFileSyncFormat(gitIgnorePath).filter(
+      (line) => line.trim() !== "" && !line.includes("#")
+    );
+    return ignoreList;
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      log.info(".gitignore 文件不存在");
+    } else {
+      log.error("读取.gitignore 文件时出错:", err);
+    }
+    return [];
+  }
+};
+
+const getDefaultIgnoreList = () => {
+  return [".git", "dist", "node_modules", ".gitignore"].concat(getIgnoreList());
+};
+
+// 当前路径是否是忽略的
+const checkPathIsIgnore = (path, ignoreList = []) => {
+  for (const ignoreItem of ignoreList) {
+    if (ignoreItem.includes("*")) {
+      const parts = ignoreItem.split("*");
+      let match = true;
+      let startIndex = 0;
+      for (const part of parts) {
+        const index = path.indexOf(part, startIndex);
+        if (index === -1) {
+          match = false;
+          break;
+        }
+        startIndex = index + part.length;
+      }
+      if (match) return true;
+    } else {
+      if (path.includes(ignoreItem)) return true;
+    }
+  }
+  return false;
+};
+
 module.exports = {
   checkFileExist,
   createNewNameBy,
@@ -214,8 +299,12 @@ module.exports = {
   moveSync,
   copyDir,
   readdirSync,
+  reReaddirSync,
   filterFileList,
   getFileList,
   getFileDetail,
   logFileDetail,
+  getJsonContent,
+  getIgnoreList,
+  getDefaultIgnoreList,
 };
